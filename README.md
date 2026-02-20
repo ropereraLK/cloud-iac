@@ -13,7 +13,7 @@ cloud-iac/
 │   ├── s3/
 │   └── iam/
 │
-├── live/
+├── env/
 │   ├── dev/
 │   │   ├── network/
 │   │   ├── platform/
@@ -21,7 +21,7 @@ cloud-iac/
 │   │       ├── service-a/
 │   │       └── service-b/
 │   │
-│   ├── staging/
+│   ├── stg/
 │   │   ├── network/
 │   │   ├── platform/
 │   │   └── services/
