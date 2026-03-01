@@ -6,47 +6,34 @@ Policies define **allowed scope** for AWS resources in this repo. They act as co
 
 - **Consistency** – All environments follow the same high-level rules.
 - **Safety** – Prevent expensive or non-compliant resources (e.g. large instance types, restricted regions).
-- **Clarity** – Single place to see what is allowed for each service and environment.
+- **Clarity** – Single place to see what is allowed for each service.
 
 ## Directory structure
 
 ```
 policy/
-├── Policy_README.md          # This file
-├── global/                   # Rules that apply to all resources, all environments
-│   ├── globalPolicy.tf       # Company-wide AWS policy (all services)
-│   └── ec2/
-│       └── ec2-globalPolicy.tf   # EC2-specific policy for every environment
-└── env/                      # Environment-specific overrides or additions
-    ├── devPolicy.tf          # Policy for all resources in the Dev environment
-    └── dev/
-        └── ec2-devPolicy.tf  # EC2 policy for Dev only
+├── Policy_README.md    # This file
+└── ec2.tf             # EC2 policy (e.g. allowed instance types)
 ```
 
-## Scope by file
+Add one file per service (e.g. `rds.tf`, `s3.tf`) when you need more policies. Add `env/` (e.g. `env/dev/ec2.tf`) only when you have environment-specific overrides.
 
-| File | Scope |
-|------|--------|
-| `global/globalPolicy.tf` | All AWS resources, all environments |
-| `global/ec2/ec2-globalPolicy.tf` | All EC2 instances, all environments (e.g. allowed instance types) |
-| `env/devPolicy.tf` | All resources in the Dev environment |
-| `env/dev/ec2-devPolicy.tf` | EC2 only, Dev environment |
+## Example: EC2 policy
 
-## Example: EC2 global policy
-
-`global/ec2/ec2-globalPolicy.tf` defines allowed instance types as Terraform locals. These values are intended to be passed into the EC2 module (or validated in CI) so that only listed types can be used:
+`ec2.tf` defines allowed instance types in `local.ec2_policy.allowed_instance_types`:
 
 - **Allowed:** `t3.micro`, `t3.small`
-- **Blocked:** anything else (e.g. `m5.xlarge`) unless added to the policy or overridden at environment level.
+- **Blocked:** anything else (e.g. `m5.xlarge`) unless added to the policy.
+
+Use this list in infra (e.g. pick an allowed type in `DevSetUpT3Micro.tf`) or enforce in CI (Conftest, OPA, Sentinel).
 
 ## How to use policies
 
-1. **Define** – Add or edit `.tf` files under `policy/` with `locals` (or similar) that describe allowed options (instance types, AMIs, regions, etc.).
-2. **Reference** – From infra (e.g. `infra/env/dev/`) or from the EC2 module, pass these values in as variables and validate (e.g. `precondition` or variable `validation` block).
-3. **Enforce** – Optionally add CI checks (e.g. Conftest, OPA, or Sentinel) that reject plans that violate policy.
+1. **Define** – Add or edit `.tf` files under `policy/` with `locals` that describe allowed options (instance types, AMIs, regions, etc.).
+2. **Reference** – From infra, use allowed values (e.g. `instance_type = "t3.micro"`) and keep them in sync with policy.
+3. **Enforce** – Optionally add CI checks that reject plans that violate policy.
 
 ## Adding a new policy
 
-- **Global for a service** – Add `policy/global/<service>/<service>-globalPolicy.tf` (e.g. `rds/rds-globalPolicy.tf`).
-- **Per environment** – Add `policy/env/<env>/<service>-<env>Policy.tf` (e.g. `env/dev/ec2-devPolicy.tf`).
-- Keep the same pattern: use `locals` (or a small set of variables) so infra or modules can consume them.
+- **New service** – Add `policy/<service>.tf` (e.g. `policy/rds.tf`) with a `locals` block for that service’s rules.
+- **Env-specific overrides** – When needed, add `policy/env/<env>/<service>.tf` (e.g. `policy/env/dev/ec2.tf`).

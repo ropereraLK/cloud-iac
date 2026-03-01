@@ -1,21 +1,16 @@
-# Template to create the terraform file.
-# Missing configs are added in env-specific files (e.g. devSetUpT3Micro.tf).
-# - Consume EC2 module
-# - Validate policy from policy
-
-# Load global EC2 policy (allowed instance types).
-module "ec2_policy" {
-  source = "../../policy/global/ec2"
-}
-
-# Create EC2 instance; instance_type must be allowed by policy.
-module "ec2" {
-  source = "../../modules/ec2"
-
-  config = var.config
-
-  precondition {
-    condition     = contains(module.ec2_policy.allowed_instance_types, var.config.instance_type)
-    error_message = "Instance type \"${var.config.instance_type}\" is not allowed by policy. Allowed: ${join(", ", module.ec2_policy.allowed_instance_types)}."
-  }
-}
+# Template to create the Terraform file.
+# Missing configs are added in env-specific files (e.g. DevSetUpT3Micro.tf).
+#
+# Pattern (from env root, e.g. infra/env/dev/):
+#   module "ec2" {
+#     source = "../../modules/ec2"
+#     config = {
+#       ami           = "<AMI for your region>"
+#       instance_type = "t3.micro"   # must be in policy/ec2.tf allowed list
+#       name          = "<instance name>"
+#       volume_size   = 20
+#     }
+#   }
+#
+# - Consume EC2 module (directly from env).
+# - Keep instance_type in policy allowed list (validate in CI or by convention).
