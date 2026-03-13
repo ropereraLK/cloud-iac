@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: EC2 instance with parameterized AMI
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Deployment Environment
+    Default: dev
+    AllowedValues:
+      - dev
+      - stg
+      - prod
+
+  AmiId:
+    Type: AWS::EC2::Image::Id
+    Description: Amazon Linux 2023 AMI
+    Default: ami-0c421724a94bba6d6
+
+Mappings:
+  InstanceTypeMap:
+    dev:
+      type: t3.micro
+    stg:
+      type: t3.micro
+    prod:
+      type: t3.micro
+
+Resources:
+  EC2Instance01:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !FindInMap
+        - InstanceTypeMap
+        - !Ref Environment
+        - type
+      ImageId: !Ref AmiId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-instance-01
+
+Outputs:
+  InstanceId:
+    Description: EC2 Instance ID
+    Value: !Ref EC2Instance01
